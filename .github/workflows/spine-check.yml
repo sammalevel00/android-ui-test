@@ -1,17 +1,24 @@
-name: Spine Check
-on: workflow_dispatch # Manual trigger
+name: Deep Probe
+on: workflow_dispatch
 
 jobs:
-  check-kernel:
-    runs-on: ubuntu-22.04-arm # THE NEW ARM RUNNER
+  forensics:
+    runs-on: ubuntu-22.04-arm
     steps:
-      - name: Check for Binder and KVM
+      - name: Probe for Android Drivers
         run: |
-          echo "--- Kernel Version ---"
-          uname -r
-          echo "--- Check Binder ---"
-          ls -l /dev/binder || echo "❌ No Binder"
-          echo "--- Check Docker Privileged ---"
-          docker run --privileged --rm alpine uname -a
-          echo "--- Check for ARM Native ---"
-          arch
+          echo "--- 1. Search for Binder in Modules ---"
+          find /lib/modules/$(uname -r) -name "*binder*" || echo "No binder module found in filesystem"
+          
+          echo "--- 2. Try Manual Load ---"
+          sudo modprobe binder_linux || echo "modprobe failed"
+          
+          echo "--- 3. Check for BinderFS Support ---"
+          grep binder /proc/filesystems || echo "BinderFS not supported by kernel"
+          
+          echo "--- 4. Attempt BinderFS Mount ---"
+          sudo mkdir -p /dev/binderfs
+          sudo mount -t binder binder /dev/binderfs && ls -l /dev/binderfs || echo "Mount failed"
+
+          echo "--- 5. Final Device Check ---"
+          ls -l /dev/binder /dev/ashmem /dev/kvm || echo "No standard devices found"
