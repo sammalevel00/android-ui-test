@@ -1,0 +1,17 @@
+name: Spine Check
+on: workflow_dispatch # Manual trigger
+
+jobs:
+  check-kernel:
+    runs-on: ubuntu-22.04-arm # THE NEW ARM RUNNER
+    steps:
+      - name: Check for Binder and KVM
+        run: |
+          echo "--- Kernel Version ---"
+          uname -r
+          echo "--- Check Binder ---"
+          ls -l /dev/binder || echo "❌ No Binder"
+          echo "--- Check Docker Privileged ---"
+          docker run --privileged --rm alpine uname -a
+          echo "--- Check for ARM Native ---"
+          arch
